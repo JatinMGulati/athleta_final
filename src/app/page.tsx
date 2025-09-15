@@ -5,6 +5,9 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { createAndStoreNonce } from '@/lib/utils';
+import { getAuthClient, getGoogleProvider, getDb } from '@/lib/firebase';
+import { getRedirectResult } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const GoogleAuthButton = dynamic(() => import("@/components/GoogleAuthButton"), {
   ssr: false,
@@ -14,6 +17,43 @@ export default function Home() {
   const [particles, setParticles] = useState<{ left: number; top: number; delay: number; duration: number }[]>([]);
 
   useEffect(() => {
+    // If the user returned from a redirect sign-in (mobile), get the result and handle claim
+    (async () => {
+      try {
+        const auth = getAuthClient();
+        const result = await getRedirectResult(auth);
+        if (!result) return; // no redirect result
+        const user = result.user;
+        const email = user.email?.trim().toLowerCase();
+        if (!email) {
+          handleError('Unable to get email from Google account');
+          return;
+        }
+        if (!email.endsWith('@rvu.edu.in')) {
+          await auth.signOut();
+          handleError('Please use a Google account with @rvu.edu.in email address');
+          return;
+        }
+
+        // attempt claim
+        const db = getDb();
+        const emailDocId = email;
+        const claimRef = doc(db, 'jerseyClaims', emailDocId);
+        const existing = await getDoc(claimRef);
+        if (existing.exists()) {
+          await auth.signOut();
+          handleError('This email has already been used to claim a jersey');
+          return;
+        }
+
+        await setDoc(claimRef, { email, uid: user.uid, displayName: user.displayName, claimedAt: serverTimestamp(), status: 'claimed' }, { merge: false });
+        handleSuccess();
+      } catch (e) {
+        console.error('Redirect sign-in handling failed:', e);
+        handleError('An error occurred during sign-in (redirect). Please try again.');
+      }
+    })();
+
     // Generate particle positions client-side only to avoid SSR/client mismatch
     const generated = Array.from({ length: 15 }).map(() => ({
       left: Math.random() * 100,

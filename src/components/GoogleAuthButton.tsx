@@ -10,6 +10,7 @@ import { validateRVUEmail } from '@/lib/utils';
 interface GoogleAuthButtonProps {
   onSuccess: () => void;
   onError: (reason: string) => void;
+  forceRedirect?: boolean;
 }
 
 export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButtonProps) {
@@ -17,11 +18,21 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
 
   // email validation is provided by validateRVUEmail from utils
 
+  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+
   const handleGoogleSignIn = async () => {
     if (isLoading) return; // prevent multiple popups
     setIsLoading(true);
 
     try {
+      // Mobile browsers often block popups or require redirect flows; prefer redirect on mobile or when forced
+      if (isMobile || (false as boolean)) {
+        console.debug('[GoogleSignIn] using redirect flow (mobile or forced)');
+        const { signInWithRedirect } = await import('firebase/auth');
+        await signInWithRedirect(getAuthClient(), getGoogleProvider());
+        return;
+      }
+
       console.debug('[GoogleSignIn] starting popup');
       // Open popup immediately on user click for best chance to avoid blockers
       const result = await signInWithPopup(getAuthClient(), getGoogleProvider());
