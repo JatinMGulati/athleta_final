@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { createAndStoreNonce } from '@/lib/utils';
 import { getAuthClient, getGoogleProvider, getDb } from '@/lib/firebase';
-import { getRedirectResult } from 'firebase/auth';
+import { getRedirectResult, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const GoogleAuthButton = dynamic(() => import("@/components/GoogleAuthButton"), {
@@ -17,39 +17,65 @@ export default function Home() {
   const [particles, setParticles] = useState<{ left: number; top: number; delay: number; duration: number }[]>([]);
 
   useEffect(() => {
-    // If the user returned from a redirect sign-in (mobile), get the result and handle claim
+    // If the user returned from a redirect sign-in (mobile), try getRedirectResult first,
+    // then register an onAuthStateChanged fallback in case cookies or redirect result are missing.
     (async () => {
+      const auth = getAuthClient();
+      let processed = false;
+
+      const processUser = async (user: any) => {
+        if (!user || processed) return;
+        processed = true;
+        try {
+          const email = user.email?.trim().toLowerCase();
+          if (!email) {
+            handleError('Unable to get email from Google account');
+            return;
+          }
+          if (!email.endsWith('@rvu.edu.in')) {
+            await auth.signOut();
+            handleError('Please use a Google account with @rvu.edu.in email address');
+            return;
+          }
+
+          const db = getDb();
+          const emailDocId = email;
+          const claimRef = doc(db, 'jerseyClaims', emailDocId);
+          const existing = await getDoc(claimRef);
+          if (existing.exists()) {
+            await auth.signOut();
+            handleError('This email has already been used to claim a jersey');
+            return;
+          }
+
+          await setDoc(claimRef, { email, uid: user.uid, displayName: user.displayName, claimedAt: serverTimestamp(), status: 'claimed' }, { merge: false });
+          handleSuccess();
+        } catch (err) {
+          console.error('Processing redirected user failed:', err);
+          handleError('An error occurred during sign-in (redirect). Please try again.');
+        }
+      };
+
       try {
-        const auth = getAuthClient();
         const result = await getRedirectResult(auth);
-        if (!result) return; // no redirect result
-        const user = result.user;
-        const email = user.email?.trim().toLowerCase();
-        if (!email) {
-          handleError('Unable to get email from Google account');
-          return;
+        if (result && result.user) {
+          console.debug('getRedirectResult returned user', result.user.email);
+          await processUser(result.user);
+        } else {
+          // register auth-state fallback
+          const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+              console.debug('onAuthStateChanged detected user after redirect', user.email);
+              await processUser(user);
+              unsubscribe();
+            }
+          });
+          // Optional: cleanup when component unmounts
+          // We'll rely on the closure; nothing else required here.
         }
-        if (!email.endsWith('@rvu.edu.in')) {
-          await auth.signOut();
-          handleError('Please use a Google account with @rvu.edu.in email address');
-          return;
-        }
-
-        // attempt claim
-        const db = getDb();
-        const emailDocId = email;
-        const claimRef = doc(db, 'jerseyClaims', emailDocId);
-        const existing = await getDoc(claimRef);
-        if (existing.exists()) {
-          await auth.signOut();
-          handleError('This email has already been used to claim a jersey');
-          return;
-        }
-
-        await setDoc(claimRef, { email, uid: user.uid, displayName: user.displayName, claimedAt: serverTimestamp(), status: 'claimed' }, { merge: false });
-        handleSuccess();
       } catch (e) {
         console.error('Redirect sign-in handling failed:', e);
+        // Don't fail silently; let user know something went wrong
         handleError('An error occurred during sign-in (redirect). Please try again.');
       }
     })();
