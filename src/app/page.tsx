@@ -1,10 +1,10 @@
-
 'use client';
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { createAndStoreNonce } from '@/lib/utils';
 
 const GoogleAuthButton = dynamic(() => import("@/components/GoogleAuthButton"), {
   ssr: false,
@@ -26,11 +26,16 @@ export default function Home() {
   }, []);
 
   const handleSuccess = () => {
-    router.push('/success');
+    const nonce = createAndStoreNonce('success');
+    console.debug('[Home] success nonce', nonce);
+    // Use a full navigation to avoid HMR/router interruption in dev
+    window.location.href = `/success?n=${encodeURIComponent(nonce)}`;
   };
 
   const handleError = (reason: string) => {
-    router.push(`/error?reason=${encodeURIComponent(reason)}`);
+    const nonce = createAndStoreNonce('error');
+    console.debug('[Home] error nonce', nonce, 'reason', reason);
+    window.location.href = `/error?n=${encodeURIComponent(nonce)}&reason=${encodeURIComponent(reason)}`;
   };
 
   return (

@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
 import { useState } from 'react';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface JerseyClaimFormProps {
@@ -13,18 +13,22 @@ export default function JerseyClaimForm({ onSuccess, onError }: JerseyClaimFormP
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const validateEmail = (email: string): boolean => {
+  const validateEmail = (value: string): boolean => {
     const rvuEmailRegex = /^[a-zA-Z0-9._%+-]+@rvu\.edu\.in$/;
-    return rvuEmailRegex.test(email);
+    return rvuEmailRegex.test(value.trim());
   };
 
-  const checkEmailUniqueness = async (email: string): Promise<boolean> => {
+  const checkEmailUniqueness = async (value: string): Promise<boolean> => {
     try {
-      const q = query(collection(db, 'jerseyClaims'), where('email', '==', email));
-      const querySnapshot = await getDocs(q);
-      return querySnapshot.empty;
-    } catch (error) {
-      console.error('Error checking email uniqueness:', error);
+      // First try direct doc by email id
+      const byId = await getDoc(doc(db, 'jerseyClaims', value));
+      if (byId.exists()) return false;
+      // Fallback to querying by email field
+      const q = query(collection(db, 'jerseyClaims'), where('email', '==', value));
+      const snapshot = await getDocs(q);
+      return snapshot.empty;
+    } catch (err) {
+      console.error('Error checking email uniqueness:', err);
       return false;
     }
   };
@@ -34,29 +38,28 @@ export default function JerseyClaimForm({ onSuccess, onError }: JerseyClaimFormP
     setIsLoading(true);
 
     try {
-      // Validate email format
-      if (!validateEmail(email)) {
+      const trimmed = email.trim().toLowerCase();
+
+      if (!validateEmail(trimmed)) {
         onError('Please use a valid @rvu.edu.in email address');
         return;
       }
 
-      // Check if email is unique
-      const isUnique = await checkEmailUniqueness(email);
+      const isUnique = await checkEmailUniqueness(trimmed);
       if (!isUnique) {
         onError('This email has already been used to claim a jersey');
         return;
       }
 
-      // Add claim to Firestore
       await addDoc(collection(db, 'jerseyClaims'), {
-        email: email,
+        email: trimmed,
         claimedAt: new Date(),
-        status: 'claimed'
+        status: 'claimed',
       });
 
       onSuccess();
-    } catch (error) {
-      console.error('Error claiming jersey:', error);
+    } catch (err) {
+      console.error('Error claiming jersey:', err);
       onError('An error occurred while claiming your jersey. Please try again.');
     } finally {
       setIsLoading(false);
@@ -81,15 +84,15 @@ export default function JerseyClaimForm({ onSuccess, onError }: JerseyClaimFormP
             disabled={isLoading}
           />
         </div>
-        
+
         <button
           type="submit"
-          disabled={isLoading || !email}
+          disabled={isLoading || !email.trim()}
           className="w-full py-3 px-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105 disabled:transform-none"
         >
           {isLoading ? (
             <div className="flex items-center justify-center space-x-2">
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               <span>Claiming Jersey...</span>
             </div>
           ) : (
