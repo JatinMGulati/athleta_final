@@ -78,7 +78,15 @@ export default function Home() {
             ATLETA
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-lg mx-auto leading-relaxed">
-            Claim your exclusive jersey and join the Atleta community
+          Claim your jersey and join the Atleta community{" "}
+          <a
+          href="https://www.instagram.com/atleta_rvu/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-pink-400 hover:underline"
+          >
+            @atleta_rvu
+          </a>
           </p>
         </div>
 
@@ -91,7 +99,6 @@ export default function Home() {
         <div className="text-sm text-white/70 space-y-2">
           <p>• Sign in with your @rvu.edu.in Google account</p>
           <p>• One jersey per account</p>
-          <p>• Limited quantity available</p>
         </div>
       </div>
 

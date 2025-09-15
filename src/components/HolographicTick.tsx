@@ -53,10 +53,17 @@ export default function HolographicTick() {
         {/* Success message */}
         <div className="space-y-4">
           <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
-            Jersey Claimed!
+            Claim!
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-md mx-auto">
-            Your jersey has been successfully claimed. Check your email for confirmation details.
+            Your jersey can be claimed. Stay tuned for updates with <a
+          href="https://www.instagram.com/atleta_rvu/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-pink-400 hover:underline"
+          >
+            @atleta_rvu
+          </a>!
           </p>
         </div>
 

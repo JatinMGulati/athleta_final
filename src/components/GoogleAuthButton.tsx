@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { signInWithPopup, signOut } from 'firebase/auth';
 import { getAuthClient, getGoogleProvider } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getDb } from '@/lib/firebase';
 import { validateRVUEmail } from '@/lib/utils';
 
 interface GoogleAuthButtonProps {
@@ -43,12 +43,13 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
         return;
       }
 
-      // Create claim document with the normalized email as the document ID
-      const emailDocId = email;
-      console.debug('[ClaimAttempt] about to write claim', { email, emailDocId, uid: user.uid });
+  // Create claim document with the normalized email as the document ID
+  const emailDocId = email;
+  console.debug('[ClaimAttempt] about to write claim', { email, emailDocId, uid: user.uid });
 
-      // Prevent duplicate claims: check if a claim for this email already exists
-      const claimRef = doc(db, 'jerseyClaims', emailDocId);
+  // Prevent duplicate claims: check if a claim for this email already exists
+  const db = getDb();
+  const claimRef = doc(db, 'jerseyClaims', emailDocId);
       try {
         const existing = await getDoc(claimRef);
         if (existing.exists()) {
@@ -78,18 +79,19 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
           { merge: false }
         );
          console.debug('[ClaimAttempt] write succeeded', { emailDocId });
-       } catch (e: unknown) {
-         console.error('[ClaimWriteError]', e);
-         // Most common: permission-denied (not RVU or duplicate)
-         const code = (e as { code?: string } | null)?.code;
-         const msg = (e as { message?: string } | null)?.message;
-         if (code === 'permission-denied' || String(msg).includes('Missing or insufficient permissions')) {
-           await signOut(getAuthClient());
-           onError('This email is not eligible or has already claimed a jersey');
-           return;
-         }
-         throw e;
-       }
+      } catch (e: unknown) {
+        console.error('[ClaimWriteError]', e);
+        const code = (e as { code?: string } | null)?.code;
+        const msg = (e as { message?: string } | null)?.message;
+        // Most common: permission-denied (not RVU or duplicate)
+        if (code === 'permission-denied' || String(msg).includes('Missing or insufficient permissions')) {
+          await signOut(getAuthClient());
+          onError(`This email is not eligible or has already claimed a jersey (${code || 'permission-denied'})`);
+          return;
+        }
+        onError(`An error occurred while writing claim (${code || 'unknown'}): ${msg || String(e)}`);
+        return;
+      }
 
        console.debug('[GoogleSignIn] success, calling onSuccess');
        onSuccess();
@@ -109,9 +111,9 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
           onError('Popup blocked. Please allow popups or try again.');
         }
        } else if (code === 'permission-denied' || String(msg).includes('Missing or insufficient permissions')) {
-         onError('Permission denied. Ensure you are using an @rvu.edu.in Google account and have not claimed before.');
+         onError(`Permission denied. Ensure you are using an @rvu.edu.in Google account and have not claimed before. (${code || 'permission-denied'})`);
        } else {
-         onError('An error occurred during sign-in. Please try again.');
+         onError(`An error occurred during sign-in (${code || 'unknown'}): ${msg || String(error)}`);
        }
      } finally {
        setIsLoading(false);
