@@ -15,6 +15,13 @@ const GoogleAuthButton = dynamic(() => import("@/components/GoogleAuthButton"), 
 
 export default function Home() {
   const [particles, setParticles] = useState<{ left: number; top: number; delay: number; duration: number }[]>([]);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
+
+  const pushLog = (msg: string) => {
+    // keep recent logs at top
+    setDebugLogs((s) => [msg, ...s].slice(0, 10));
+    console.debug(msg);
+  };
 
   useEffect(() => {
     // If the user returned from a redirect sign-in (mobile), try getRedirectResult first,
@@ -28,12 +35,15 @@ export default function Home() {
         if (!user || processed) return;
         processed = true;
         try {
+          pushLog(`processing user: ${user?.email ?? 'no-email'}`);
           const email = user.email?.trim().toLowerCase();
           if (!email) {
+            pushLog('no email on user object');
             handleError('Unable to get email from Google account');
             return;
           }
           if (!email.endsWith('@rvu.edu.in')) {
+            pushLog('email domain not allowed: ' + email);
             await auth.signOut();
             handleError('Please use a Google account with @rvu.edu.in email address');
             return;
@@ -53,20 +63,24 @@ export default function Home() {
           handleSuccess();
         } catch (err) {
           console.error('Processing redirected user failed:', err);
+          pushLog('processing user failed: ' + String(err));
           handleError('An error occurred during sign-in (redirect). Please try again.');
         }
       };
 
       try {
         const result = await getRedirectResult(auth);
+        pushLog('getRedirectResult completed: ' + (result ? 'has-result' : 'no-result'));
         if (result && result.user) {
-          console.debug('getRedirectResult returned user', result.user.email);
+          pushLog('getRedirectResult returned user: ' + (result.user.email ?? 'no-email'));
           await processUser(result.user);
         } else {
+          pushLog('no redirect result; registering onAuthStateChanged fallback');
           // register auth-state fallback
           const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            pushLog('onAuthStateChanged invoked; user: ' + (user ? user.email : 'null'));
             if (user) {
-              console.debug('onAuthStateChanged detected user after redirect', user.email);
+              pushLog('onAuthStateChanged detected user after redirect: ' + (user.email ?? 'no-email'));
               await processUser(user);
               unsubscribe();
             }
@@ -160,6 +174,19 @@ export default function Home() {
         {/* Google Auth button */}
         <div className="mb-8">
           <GoogleAuthButton onSuccess={handleSuccess} onError={handleError} />
+          {/* Debug logs (visible during testing) */}
+          <div className="mt-4 text-left text-xs text-white/70 max-w-md mx-auto p-3 bg-black/40 rounded">
+            <div className="font-semibold text-white/90 mb-2">Debug logs (mobile)</div>
+            {debugLogs.length === 0 ? (
+              <div className="text-white/50">no logs yet</div>
+            ) : (
+              <ul className="space-y-1">
+                {debugLogs.map((l, i) => (
+                  <li key={i} className="truncate">{l}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
 
         {/* Additional info */}
