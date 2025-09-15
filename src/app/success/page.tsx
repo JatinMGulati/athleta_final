@@ -1,11 +1,12 @@
+export const dynamic = 'force-dynamic';
+
 "use client";
 import HolographicTick from '@/components/HolographicTick';
 import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 
 export default function SuccessPage() {
   const params = useSearchParams();
-  const router = useRouter();
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
@@ -15,9 +16,9 @@ export default function SuccessPage() {
       setOk(true);
       sessionStorage.removeItem('athleta_last_success');
     } else {
-      router.replace('/');
+      window.location.replace('/');
     }
-  }, [params, router]);
+  }, [params]);
 
   if (!ok) return null;
   return <HolographicTick />;

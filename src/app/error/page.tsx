@@ -1,12 +1,13 @@
-'use client';
+export const dynamic = 'force-dynamic';
 
-import { useSearchParams, useRouter } from 'next/navigation';
+"use client";
+
+import { useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import HolographicCross from '@/components/HolographicCross';
 
 export default function ErrorPage() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const [ok, setOk] = useState(false);
 
   useEffect(() => {
@@ -16,9 +17,9 @@ export default function ErrorPage() {
       setOk(true);
       sessionStorage.removeItem('athleta_last_error');
     } else {
-      router.replace('/');
+      window.location.replace('/');
     }
-  }, [searchParams, router]);
+  }, [searchParams]);
 
   if (!ok) return null;
   const reason = searchParams.get('reason') || 'Unknown error occurred';

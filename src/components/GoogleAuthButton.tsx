@@ -101,13 +101,13 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
          onError('Sign-in was cancelled');
        } else if (code === 'auth/popup-blocked') {
          // Fallback to redirect-based sign-in when popup is blocked
-         try {
-           const { signInWithRedirect } = await import('firebase/auth');
-           await signInWithRedirect(getAuthClient(), getGoogleProvider());
-           return;
-         } catch (e: unknown) {
-           onError('Popup blocked. Please allow popups or try again.');
-         }
+        try {
+          const { signInWithRedirect } = await import('firebase/auth');
+          await signInWithRedirect(getAuthClient(), getGoogleProvider());
+          return;
+        } catch {
+          onError('Popup blocked. Please allow popups or try again.');
+        }
        } else if (code === 'permission-denied' || String(msg).includes('Missing or insufficient permissions')) {
          onError('Permission denied. Ensure you are using an @rvu.edu.in Google account and have not claimed before.');
        } else {
