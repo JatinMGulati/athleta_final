@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { createAndStoreNonce } from '@/lib/utils';
-import { getAuthClient, getGoogleProvider, getDb } from '@/lib/firebase';
+import { getAuthClient, getDb } from '@/lib/firebase';
 import { getRedirectResult, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -23,7 +23,8 @@ export default function Home() {
       const auth = getAuthClient();
       let processed = false;
 
-      const processUser = async (user: any) => {
+      type FirebaseUser = { email?: string | null; uid?: string; displayName?: string | null };
+      const processUser = async (user: FirebaseUser | null) => {
         if (!user || processed) return;
         processed = true;
         try {
