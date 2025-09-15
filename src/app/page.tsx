@@ -1,7 +1,7 @@
 'use client';
 
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+// router navigation replaced by window.location.href for robustness in dev
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { createAndStoreNonce } from '@/lib/utils';
@@ -11,7 +11,6 @@ const GoogleAuthButton = dynamic(() => import("@/components/GoogleAuthButton"), 
 });
 
 export default function Home() {
-  const router = useRouter();
   const [particles, setParticles] = useState<{ left: number; top: number; delay: number; duration: number }[]>([]);
 
   useEffect(() => {

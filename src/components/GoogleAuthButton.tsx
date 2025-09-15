@@ -15,10 +15,7 @@ interface GoogleAuthButtonProps {
 export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const validateEmail = (email: string): boolean => {
-    const rvuEmailRegex = /^[a-zA-Z0-9._%+-]+@rvu\.edu\.in$/;
-    return rvuEmailRegex.test(email);
-  };
+  // email validation is provided by validateRVUEmail from utils
 
   const handleGoogleSignIn = async () => {
     if (isLoading) return; // prevent multiple popups
@@ -60,7 +57,7 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
           onError('This email has already been used to claim a jersey');
           return;
         }
-      } catch (e) {
+      } catch (e: unknown) {
         console.error('[ClaimCheckError]', e);
         // allow write attempt to surface the real error
       }
@@ -81,10 +78,12 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
           { merge: false }
         );
          console.debug('[ClaimAttempt] write succeeded', { emailDocId });
-       } catch (e: any) {
+       } catch (e: unknown) {
          console.error('[ClaimWriteError]', e);
          // Most common: permission-denied (not RVU or duplicate)
-         if (e?.code === 'permission-denied' || String(e?.message).includes('Missing or insufficient permissions')) {
+         const code = (e as { code?: string } | null)?.code;
+         const msg = (e as { message?: string } | null)?.message;
+         if (code === 'permission-denied' || String(msg).includes('Missing or insufficient permissions')) {
            await signOut(getAuthClient());
            onError('This email is not eligible or has already claimed a jersey');
            return;
@@ -94,20 +93,22 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
 
        console.debug('[GoogleSignIn] success, calling onSuccess');
        onSuccess();
-     } catch (error: any) {
+     } catch (error: unknown) {
        console.error('Error signing in with Google:', error);
-       if (error.code === 'auth/popup-closed-by-user') {
+       const code = (error as { code?: string } | null)?.code;
+       const msg = (error as { message?: string } | null)?.message;
+       if (code === 'auth/popup-closed-by-user') {
          onError('Sign-in was cancelled');
-       } else if (error.code === 'auth/popup-blocked') {
+       } else if (code === 'auth/popup-blocked') {
          // Fallback to redirect-based sign-in when popup is blocked
          try {
            const { signInWithRedirect } = await import('firebase/auth');
            await signInWithRedirect(getAuthClient(), getGoogleProvider());
            return;
-         } catch (e) {
+         } catch (e: unknown) {
            onError('Popup blocked. Please allow popups or try again.');
          }
-       } else if (error.code === 'permission-denied' || error.message?.includes('Missing or insufficient permissions')) {
+       } else if (code === 'permission-denied' || String(msg).includes('Missing or insufficient permissions')) {
          onError('Permission denied. Ensure you are using an @rvu.edu.in Google account and have not claimed before.');
        } else {
          onError('An error occurred during sign-in. Please try again.');
