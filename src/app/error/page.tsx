@@ -1,27 +1,28 @@
-export const dynamic = 'force-dynamic';
-
 "use client";
 
-import { useSearchParams } from 'next/navigation';
+export const dynamic = 'force-dynamic';
+
 import { useEffect, useState } from 'react';
 import HolographicCross from '@/components/HolographicCross';
 
 export default function ErrorPage() {
-  const searchParams = useSearchParams();
   const [ok, setOk] = useState(false);
+  const [reason, setReason] = useState('Unknown error occurred');
 
   useEffect(() => {
-    const n = searchParams.get('n');
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const n = params.get('n');
+    const r = params.get('reason');
     const last = sessionStorage.getItem('athleta_last_error');
     if (n && last && n === last) {
+      setReason(r || 'Unknown error occurred');
       setOk(true);
       sessionStorage.removeItem('athleta_last_error');
     } else {
       window.location.replace('/');
     }
-  }, [searchParams]);
+  }, []);
 
   if (!ok) return null;
-  const reason = searchParams.get('reason') || 'Unknown error occurred';
   return <HolographicCross reason={reason} />;
 }
