@@ -22,7 +22,7 @@ export default function Home() {
       const auth = getAuthClient();
       let processed = false;
 
-      const processUser = async (user: any) => {
+      const processUser = async (user: { email?: string | null; uid?: string; displayName?: string | null }) => {
         if (!user || processed) return;
         processed = true;
         

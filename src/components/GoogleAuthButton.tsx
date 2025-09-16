@@ -69,32 +69,34 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
         );
         
         onSuccess();
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error('[ClaimWriteError]', e);
-        if (e?.code === 'permission-denied' || String(e?.message).includes('Missing or insufficient permissions')) {
+        const error = e as { code?: string; message?: string };
+        if (error?.code === 'permission-denied' || String(error?.message).includes('Missing or insufficient permissions')) {
           await signOut(getAuthClient());
           onError('This email is not eligible or has already claimed a jersey');
           return;
         }
-        onError(`An error occurred while writing claim: ${e?.message || String(e)}`);
+        onError(`An error occurred while writing claim: ${error?.message || String(e)}`);
         return;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error signing in with Google:', error);
+      const authError = error as { code?: string; message?: string };
       
-      if (error?.code === 'auth/popup-closed-by-user') {
+      if (authError?.code === 'auth/popup-closed-by-user') {
         onError('Sign-in was cancelled');
-      } else if (error?.code === 'auth/popup-blocked') {
+      } else if (authError?.code === 'auth/popup-blocked') {
         // Fallback to redirect for mobile/in-app browsers
         try {
           const { signInWithRedirect } = await import('firebase/auth');
           await signInWithRedirect(getAuthClient(), getGoogleProvider());
           return;
-        } catch (redirectError) {
+        } catch {
           onError('Popup blocked. Please allow popups or try again.');
         }
       } else {
-        onError(`An error occurred during sign-in: ${error?.message || String(error)}`);
+        onError(`An error occurred during sign-in: ${authError?.message || String(error)}`);
       }
     } finally {
       setIsLoading(false);
