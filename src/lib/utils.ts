@@ -21,7 +21,12 @@ export function createAndStoreNonce(kind: 'success' | 'error'): string {
   if (typeof window === 'undefined') return '';
   const key = kind === 'success' ? 'athleta_last_success' : 'athleta_last_error';
   const n = typeof crypto?.randomUUID === 'function' ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2);
-  try { sessionStorage.setItem(key, n); } catch {}
+  try {
+    // Prefer localStorage for redirect durability on mobile; fall back to sessionStorage
+    localStorage.setItem(key, n);
+  } catch {
+    try { sessionStorage.setItem(key, n); } catch {}
+  }
   return n;
 }
 

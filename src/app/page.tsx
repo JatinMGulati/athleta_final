@@ -30,6 +30,22 @@ export default function Home() {
       const auth = getAuthClient();
       let processed = false;
 
+      // quick environment checks for mobile debugging
+      try {
+        if (typeof window !== 'undefined') {
+          pushLog('location: ' + window.location.href);
+          pushLog('cookies: ' + (document.cookie || '<empty>'));
+          try {
+            pushLog('session success key: ' + (sessionStorage.getItem('athleta_last_success') ?? '<none>'));
+            pushLog('session error key: ' + (sessionStorage.getItem('athleta_last_error') ?? '<none>'));
+          } catch (e) {
+            pushLog('sessionStorage unavailable: ' + String(e));
+          }
+        }
+      } catch (e) {
+        console.warn('debug env probes failed', e);
+      }
+
       type FirebaseUser = { email?: string | null; uid?: string; displayName?: string | null };
       const processUser = async (user: FirebaseUser | null) => {
         if (!user || processed) return;
