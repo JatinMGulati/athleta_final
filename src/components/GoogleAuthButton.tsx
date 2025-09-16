@@ -10,74 +10,52 @@ import { validateRVUEmail } from '@/lib/utils';
 interface GoogleAuthButtonProps {
   onSuccess: () => void;
   onError: (reason: string) => void;
-  forceRedirect?: boolean;
 }
 
 export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
-  // email validation is provided by validateRVUEmail from utils
-
-  const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
-
   const handleGoogleSignIn = async () => {
-    if (isLoading) return; // prevent multiple popups
+    if (isLoading) return;
     setIsLoading(true);
 
     try {
-      // Mobile browsers often block popups or require redirect flows; prefer redirect on mobile or when forced
-      if (isMobile || (false as boolean)) {
-        console.debug('[GoogleSignIn] using redirect flow (mobile or forced)');
-        const { signInWithRedirect } = await import('firebase/auth');
-        await signInWithRedirect(getAuthClient(), getGoogleProvider());
-        return;
-      }
-
-      console.debug('[GoogleSignIn] starting popup');
-      // Open popup immediately on user click for best chance to avoid blockers
+      // Try popup first, fallback to redirect if blocked
       const result = await signInWithPopup(getAuthClient(), getGoogleProvider());
-      console.debug('[GoogleSignIn] popup result', result);
       const user = result.user;
-      const email = user.email?.trim().toLowerCase();
+      const email = user.email?.trim();
 
       if (!email) {
         onError('Unable to get email from Google account');
         return;
       }
 
-      console.debug('[GoogleSignIn] got email', email);
-
       // Validate email format
       if (!validateRVUEmail(email)) {
-        await signOut(getAuthClient()); // Sign out the user if email is invalid
+        await signOut(getAuthClient());
         onError('Please use a Google account with @rvu.edu.in email address');
         return;
       }
 
-  // Create claim document with the normalized email as the document ID
-  const emailDocId = email;
-  console.debug('[ClaimAttempt] about to write claim', { email, emailDocId, uid: user.uid });
-
-  // Prevent duplicate claims: check if a claim for this email already exists
-  const db = getDb();
-  const claimRef = doc(db, 'jerseyClaims', emailDocId);
+      // Check for existing claim
+      const db = getDb();
+      const emailDocId = email; // Use exact email as doc ID
+      const claimRef = doc(db, 'jerseyClaims', emailDocId);
+      
       try {
         const existing = await getDoc(claimRef);
         if (existing.exists()) {
-          // If it already exists, sign the user out and show an error
           await signOut(getAuthClient());
           onError('This email has already been used to claim a jersey');
           return;
         }
-      } catch (e: unknown) {
+      } catch (e) {
         console.error('[ClaimCheckError]', e);
-        // allow write attempt to surface the real error
+        // Continue to write attempt
       }
 
-       // Try to create the unique claim first
-       try {
-        const claimRefPath = claimRef.path;
-        console.debug('[ClaimAttempt] claimRef', claimRefPath);
+      // Create the claim
+      try {
         await setDoc(
           claimRef,
           {
@@ -89,47 +67,39 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
           },
           { merge: false }
         );
-         console.debug('[ClaimAttempt] write succeeded', { emailDocId });
-      } catch (e: unknown) {
+        
+        onSuccess();
+      } catch (e: any) {
         console.error('[ClaimWriteError]', e);
-        const code = (e as { code?: string } | null)?.code;
-        const msg = (e as { message?: string } | null)?.message;
-        // Most common: permission-denied (not RVU or duplicate)
-        if (code === 'permission-denied' || String(msg).includes('Missing or insufficient permissions')) {
+        if (e?.code === 'permission-denied' || String(e?.message).includes('Missing or insufficient permissions')) {
           await signOut(getAuthClient());
-          onError(`This email is not eligible or has already claimed a jersey (${code || 'permission-denied'})`);
+          onError('This email is not eligible or has already claimed a jersey');
           return;
         }
-        onError(`An error occurred while writing claim (${code || 'unknown'}): ${msg || String(e)}`);
+        onError(`An error occurred while writing claim: ${e?.message || String(e)}`);
         return;
       }
-
-       console.debug('[GoogleSignIn] success, calling onSuccess');
-       onSuccess();
-     } catch (error: unknown) {
-       console.error('Error signing in with Google:', error);
-       const code = (error as { code?: string } | null)?.code;
-       const msg = (error as { message?: string } | null)?.message;
-       if (code === 'auth/popup-closed-by-user') {
-         onError('Sign-in was cancelled');
-       } else if (code === 'auth/popup-blocked') {
-         // Fallback to redirect-based sign-in when popup is blocked
+    } catch (error: any) {
+      console.error('Error signing in with Google:', error);
+      
+      if (error?.code === 'auth/popup-closed-by-user') {
+        onError('Sign-in was cancelled');
+      } else if (error?.code === 'auth/popup-blocked') {
+        // Fallback to redirect for mobile/in-app browsers
         try {
           const { signInWithRedirect } = await import('firebase/auth');
           await signInWithRedirect(getAuthClient(), getGoogleProvider());
           return;
-        } catch {
+        } catch (redirectError) {
           onError('Popup blocked. Please allow popups or try again.');
         }
-       } else if (code === 'permission-denied' || String(msg).includes('Missing or insufficient permissions')) {
-         onError(`Permission denied. Ensure you are using an @rvu.edu.in Google account and have not claimed before. (${code || 'permission-denied'})`);
-       } else {
-         onError(`An error occurred during sign-in (${code || 'unknown'}): ${msg || String(error)}`);
-       }
-     } finally {
-       setIsLoading(false);
-     }
-   };
+      } else {
+        onError(`An error occurred during sign-in: ${error?.message || String(error)}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
    return (
      <div className="max-w-md mx-auto">

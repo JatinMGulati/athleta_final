@@ -11,7 +11,7 @@ export default function SuccessPage() {
   useEffect(() => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const n = params.get('n');
-    const last = (typeof window !== 'undefined' && (localStorage.getItem('athleta_last_success') ?? sessionStorage.getItem('athleta_last_success')) ) || null;
+    const last = typeof window !== 'undefined' ? sessionStorage.getItem('athleta_last_success') : null;
     if (n && last && n === last) {
       setOk(true);
       sessionStorage.removeItem('athleta_last_success');

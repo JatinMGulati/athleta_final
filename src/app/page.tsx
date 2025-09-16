@@ -15,67 +15,32 @@ const GoogleAuthButton = dynamic(() => import("@/components/GoogleAuthButton"), 
 
 export default function Home() {
   const [particles, setParticles] = useState<{ left: number; top: number; delay: number; duration: number }[]>([]);
-  const [debugLogs, setDebugLogs] = useState<string[]>([]);
-
-  const pushLog = (msg: string) => {
-    // keep recent logs at top
-    setDebugLogs((s) => [msg, ...s].slice(0, 10));
-    console.debug(msg);
-  };
-  const [showOpenInBrowser, setShowOpenInBrowser] = useState(false);
-
-  const openInSystemBrowser = () => {
-    if (typeof window !== 'undefined') {
-      // Open the same URL in a new tab/window — many in-app browsers will open an external browser
-      window.open(window.location.href, '_blank', 'noopener');
-    }
-  };
 
   useEffect(() => {
-    // If the user returned from a redirect sign-in (mobile), try getRedirectResult first,
-    // then register an onAuthStateChanged fallback in case cookies or redirect result are missing.
+    // Handle redirect sign-in (mobile fallback)
     (async () => {
       const auth = getAuthClient();
       let processed = false;
 
-      // quick environment checks for mobile debugging
-      try {
-        if (typeof window !== 'undefined') {
-          pushLog('location: ' + window.location.href);
-          pushLog('cookies: ' + (document.cookie || '<empty>'));
-          try {
-            pushLog('session success key: ' + (sessionStorage.getItem('athleta_last_success') ?? '<none>'));
-            pushLog('session error key: ' + (sessionStorage.getItem('athleta_last_error') ?? '<none>'));
-          } catch (e) {
-            pushLog('sessionStorage unavailable: ' + String(e));
-          }
-        }
-      } catch (e) {
-        console.warn('debug env probes failed', e);
-      }
-
-      type FirebaseUser = { email?: string | null; uid?: string; displayName?: string | null };
-      const processUser = async (user: FirebaseUser | null) => {
+      const processUser = async (user: any) => {
         if (!user || processed) return;
         processed = true;
+        
         try {
-          pushLog(`processing user: ${user?.email ?? 'no-email'}`);
-          const email = user.email?.trim().toLowerCase();
+          const email = user.email?.trim();
           if (!email) {
-            pushLog('no email on user object');
             handleError('Unable to get email from Google account');
             return;
           }
+          
           if (!email.endsWith('@rvu.edu.in')) {
-            pushLog('email domain not allowed: ' + email);
             await auth.signOut();
             handleError('Please use a Google account with @rvu.edu.in email address');
             return;
           }
 
           const db = getDb();
-          const emailDocId = email;
-          const claimRef = doc(db, 'jerseyClaims', emailDocId);
+          const claimRef = doc(db, 'jerseyClaims', email);
           const existing = await getDoc(claimRef);
           if (existing.exists()) {
             await auth.signOut();
@@ -83,56 +48,43 @@ export default function Home() {
             return;
           }
 
-          await setDoc(claimRef, { email, uid: user.uid, displayName: user.displayName, claimedAt: serverTimestamp(), status: 'claimed' }, { merge: false });
+          await setDoc(claimRef, { 
+            email, 
+            uid: user.uid, 
+            displayName: user.displayName, 
+            claimedAt: serverTimestamp(), 
+            status: 'claimed' 
+          }, { merge: false });
+          
           handleSuccess();
         } catch (err) {
           console.error('Processing redirected user failed:', err);
-          pushLog('processing user failed: ' + String(err));
-          handleError('An error occurred during sign-in (redirect). Please try again.');
+          handleError('An error occurred during sign-in. Please try again.');
         }
       };
 
       try {
-  const result = await getRedirectResult(auth);
-  pushLog('getRedirectResult completed: ' + (result ? 'has-result' : 'no-result'));
-        if (result && result.user) {
-          pushLog('getRedirectResult returned user: ' + (result.user.email ?? 'no-email'));
+        const result = await getRedirectResult(auth);
+        if (result?.user) {
           await processUser(result.user);
         } else {
-          pushLog('no redirect result; registering onAuthStateChanged fallback');
-          // register auth-state fallback
+          // Set up auth state listener for delayed redirects
           const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            pushLog('onAuthStateChanged invoked; user: ' + (user ? user.email : 'null'));
-            if (user) {
-              pushLog('onAuthStateChanged detected user after redirect: ' + (user.email ?? 'no-email'));
+            if (user && !processed) {
               await processUser(user);
               unsubscribe();
             }
           });
-          // If nothing arrives shortly, offer to open in system browser (helpful for in-app browsers)
-          setTimeout(() => {
-            try {
-              const cookies = typeof document !== 'undefined' ? document.cookie : '';
-              const hasSession = typeof window !== 'undefined' && ((localStorage.getItem('athleta_last_success') ?? sessionStorage.getItem('athleta_last_success')) || (localStorage.getItem('athleta_last_error') ?? sessionStorage.getItem('athleta_last_error')));
-              if (!processed && !cookies && !hasSession) {
-                pushLog('No cookies or session detected after redirect — offering system browser fallback');
-                setShowOpenInBrowser(true);
-              }
-            } catch (e) {
-              // ignore
-            }
-          }, 800);
-          // Optional: cleanup when component unmounts
-          // We'll rely on the closure; nothing else required here.
+          
+          // Cleanup after timeout
+          setTimeout(() => unsubscribe(), 10000);
         }
       } catch (e) {
-        console.error('Redirect sign-in handling failed:', e);
-        // Don't fail silently; let user know something went wrong
-        handleError('An error occurred during sign-in (redirect). Please try again.');
+        console.error('Redirect handling failed:', e);
       }
     })();
 
-    // Generate particle positions client-side only to avoid SSR/client mismatch
+    // Generate particles
     const generated = Array.from({ length: 15 }).map(() => ({
       left: Math.random() * 100,
       top: Math.random() * 100,
@@ -144,14 +96,11 @@ export default function Home() {
 
   const handleSuccess = () => {
     const nonce = createAndStoreNonce('success');
-    console.debug('[Home] success nonce', nonce);
-    // Use a full navigation to avoid HMR/router interruption in dev
     window.location.href = `/success?n=${encodeURIComponent(nonce)}`;
   };
 
   const handleError = (reason: string) => {
     const nonce = createAndStoreNonce('error');
-    console.debug('[Home] error nonce', nonce, 'reason', reason);
     window.location.href = `/error?n=${encodeURIComponent(nonce)}&reason=${encodeURIComponent(reason)}`;
   };
 
@@ -211,19 +160,6 @@ export default function Home() {
         {/* Google Auth button */}
         <div className="mb-8">
           <GoogleAuthButton onSuccess={handleSuccess} onError={handleError} />
-          {/* Debug logs (visible during testing) */}
-          <div className="mt-4 text-left text-xs text-white/70 max-w-md mx-auto p-3 bg-black/40 rounded">
-            <div className="font-semibold text-white/90 mb-2">Debug logs (mobile)</div>
-            {debugLogs.length === 0 ? (
-              <div className="text-white/50">no logs yet</div>
-            ) : (
-              <ul className="space-y-1">
-                {debugLogs.map((l, i) => (
-                  <li key={i} className="truncate">{l}</li>
-                ))}
-              </ul>
-            )}
-          </div>
         </div>
 
         {/* Additional info */}
