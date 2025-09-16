@@ -22,6 +22,14 @@ export default function Home() {
     setDebugLogs((s) => [msg, ...s].slice(0, 10));
     console.debug(msg);
   };
+  const [showOpenInBrowser, setShowOpenInBrowser] = useState(false);
+
+  const openInSystemBrowser = () => {
+    if (typeof window !== 'undefined') {
+      // Open the same URL in a new tab/window — many in-app browsers will open an external browser
+      window.open(window.location.href, '_blank', 'noopener');
+    }
+  };
 
   useEffect(() => {
     // If the user returned from a redirect sign-in (mobile), try getRedirectResult first,
@@ -85,8 +93,8 @@ export default function Home() {
       };
 
       try {
-        const result = await getRedirectResult(auth);
-        pushLog('getRedirectResult completed: ' + (result ? 'has-result' : 'no-result'));
+  const result = await getRedirectResult(auth);
+  pushLog('getRedirectResult completed: ' + (result ? 'has-result' : 'no-result'));
         if (result && result.user) {
           pushLog('getRedirectResult returned user: ' + (result.user.email ?? 'no-email'));
           await processUser(result.user);
@@ -101,6 +109,19 @@ export default function Home() {
               unsubscribe();
             }
           });
+          // If nothing arrives shortly, offer to open in system browser (helpful for in-app browsers)
+          setTimeout(() => {
+            try {
+              const cookies = typeof document !== 'undefined' ? document.cookie : '';
+              const hasSession = typeof window !== 'undefined' && ((localStorage.getItem('athleta_last_success') ?? sessionStorage.getItem('athleta_last_success')) || (localStorage.getItem('athleta_last_error') ?? sessionStorage.getItem('athleta_last_error')));
+              if (!processed && !cookies && !hasSession) {
+                pushLog('No cookies or session detected after redirect — offering system browser fallback');
+                setShowOpenInBrowser(true);
+              }
+            } catch (e) {
+              // ignore
+            }
+          }, 800);
           // Optional: cleanup when component unmounts
           // We'll rely on the closure; nothing else required here.
         }
