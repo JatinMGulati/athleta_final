@@ -44,4 +44,4 @@ export function getGoogleProvider(): GoogleAuthProvider {
   return new GoogleAuthProvider();
 }
 
-export const db = getDb();
+// Do not initialize Firestore at module load to avoid SSR/prerender env issues

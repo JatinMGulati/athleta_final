@@ -5,9 +5,6 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { createAndStoreNonce } from '@/lib/utils';
-import { getAuthClient, getDb } from '@/lib/firebase';
-import { getRedirectResult, onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
 const GoogleAuthButton = dynamic(() => import("@/components/GoogleAuthButton"), {
   ssr: false,
@@ -19,6 +16,11 @@ export default function Home() {
   useEffect(() => {
     // Handle redirect sign-in (mobile fallback)
     (async () => {
+      // Import Firebase modules only on client to avoid SSR env issues
+      const { getAuthClient } = await import('@/lib/firebase');
+      const { getRedirectResult, onAuthStateChanged } = await import('firebase/auth');
+      const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore');
+      const { getDb } = await import('@/lib/firebase');
       const auth = getAuthClient();
       let processed = false;
 
