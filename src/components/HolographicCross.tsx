@@ -21,7 +21,8 @@ export default function HolographicCross({ reason }: HolographicCrossProps) {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.18),transparent_65%)]" />
       {/* Moving scanlines and grain make screenshots obvious */}
       <div className="pointer-events-none absolute inset-0 opacity-15 mix-blend-screen bg-[linear-gradient(transparent_95%,rgba(255,255,255,0.5)_100%)] bg-[length:100%_4px] animate-[scan_1.2s_linear_infinite]" />
-      <div className="pointer-events-none absolute inset-0 opacity-10 animate-[grain_0.6s_steps(6)_infinite] bg-[url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'><filter id=\'n\'><feTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'1\'/><feColorMatrix type=\'saturate\' values=\'0\'/></filter><rect width=\'100%\' height=\'100%\' filter=\'url(%23n)\'/></svg>')] bg-[length:200px_200px]" />
+      {/* Subtle flicker layer (avoids data-URL to pass build) */}
+      <div className="pointer-events-none absolute inset-0 opacity-5 animate-[flicker_1.8s_steps(6)_infinite] bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.2),transparent_40%),radial-gradient(circle_at_70%_60%,rgba(255,255,255,0.15),transparent_45%)]" />
 
       {/* Main content */}
       <div className={`relative z-10 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
@@ -66,7 +67,7 @@ export default function HolographicCross({ reason }: HolographicCrossProps) {
       <style jsx global>{`
         @keyframes bg-pan { 0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } }
         @keyframes scan { 0% { background-position-y: 0 } 100% { background-position-y: 4px } }
-        @keyframes grain { 0% { background-position: 0 0 } 100% { background-position: 200px 200px } }
+        @keyframes flicker { 0% { opacity: .03 } 50% { opacity: .12 } 100% { opacity: .03 } }
       `}</style>
     </div>
   );
