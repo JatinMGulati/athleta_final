@@ -141,9 +141,7 @@ export default function Home() {
 
         {/* Title and description */}
         <div className="mb-12 space-y-6">
-          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent drop-shadow-2xl">
-            ATLETA
-          </h1>
+          
           <p className="text-xl md:text-2xl text-white/90 max-w-lg mx-auto leading-relaxed">
           Claim your jersey and join the Atleta community{" "}
           <a

@@ -12,77 +12,50 @@ export default function HolographicTick() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 opacity-50"></div>
-      
-      {/* Holographic effect layers */}
-      <div className="absolute inset-0 bg-gradient-to-r from-cyan-400/20 via-purple-400/20 to-pink-400/20 animate-pulse"></div>
-      <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-red-400/10 to-blue-400/10 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-      
+      {/* Metallic animated background */}
+      <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,#0ea5e9_0deg,#9333ea_120deg,#ef4444_240deg,#0ea5e9_360deg)] opacity-10 animate-[spin_12s_linear_infinite]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.15),transparent_60%)]" />
+
       {/* Main content */}
       <div className={`relative z-10 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
-        {/* Holographic tick */}
         <div className="relative mb-8">
-          <div className="w-32 h-32 mx-auto relative">
-            {/* Outer glow */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 opacity-30 blur-xl animate-pulse"></div>
-            
-            {/* Main tick circle */}
-            <div className="relative w-full h-full rounded-full bg-gradient-to-br from-green-400 via-emerald-500 to-teal-500 flex items-center justify-center shadow-2xl">
-              {/* Holographic shimmer effect */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-transparent via-white/30 to-transparent animate-spin" style={{ animationDuration: '3s' }}></div>
-              
-              {/* Tick mark */}
-              <svg 
-                className="w-16 h-16 text-white drop-shadow-lg relative z-10" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={4} 
-                  d="M5 13l4 4L19 7" 
-                />
+          <div className="w-40 h-40 mx-auto relative">
+            {/* Metallic ring with shifting specular highlights */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-emerald-300 to-teal-600 blur-xl opacity-40" />
+            <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#ffffff22_0deg,#ffffff88_45deg,#ffffff11_90deg,#ffffff22_180deg,#ffffff88_225deg,#ffffff11_270deg,#ffffff22_360deg)] animate-[spin_6s_linear_infinite]" />
+            <div className="absolute inset-[6px] rounded-full bg-gradient-to-br from-[#1f2937] to-[#111827] shadow-[0_0_40px_rgba(16,185,129,0.3)]" />
+
+            {/* Holographic tick with parallax shine */}
+            <div className="relative w-full h-full rounded-full flex items-center justify-center">
+              <svg className="w-20 h-20 relative z-10" viewBox="0 0 24 24">
+                <defs>
+                  <linearGradient id="tickGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#34d399" />
+                    <stop offset="50%" stopColor="#10b981" />
+                    <stop offset="100%" stopColor="#059669" />
+                  </linearGradient>
+                </defs>
+                <path d="M5 13l4 4L19 7" fill="none" stroke="url(#tickGrad)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
+              {/* moving specular highlight */}
+              <div className="pointer-events-none absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,transparent,white,transparent)] opacity-20 animate-[spin_2.8s_linear_infinite]" />
             </div>
           </div>
         </div>
 
-        {/* Success message */}
         <div className="space-y-4">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-green-400 via-emerald-400 to-teal-400 bg-clip-text text-transparent">
-            Claim!
+          <h1 className="text-4xl md:text-6xl font-bold tracking-wide">
+            <span className="bg-clip-text text-transparent bg-[linear-gradient(120deg,#a7f3d0,#34d399,#10b981,#6ee7b7)] bg-[length:200%_200%] animate-[bg-pan_4s_ease_infinite]">Jersey Claimed!</span>
           </h1>
           <p className="text-xl md:text-2xl text-white/90 max-w-md mx-auto">
-            Your jersey can be claimed. Stay tuned for updates with <a
-          href="https://www.instagram.com/atleta_rvu/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-pink-400 hover:underline"
-          >
-            @atleta_rvu
-          </a>!
+            Verified success. This screen has live motion and shifting specular highlights.
           </p>
         </div>
-
-        {/* Holographic particles */}
-        <div className="absolute inset-0 pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute w-1 h-1 bg-white/60 rounded-full animate-pulse"
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 2}s`,
-                animationDuration: `${2 + Math.random() * 2}s`
-              }}
-            />
-          ))}
-        </div>
       </div>
+
+      <style jsx global>{`
+        @keyframes bg-pan { 0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } }
+      `}</style>
     </div>
   );
 }

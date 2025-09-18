@@ -13,11 +13,12 @@ export default function ErrorPage() {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const n = params.get('n');
     const r = params.get('reason');
-    const last = typeof window !== 'undefined' ? sessionStorage.getItem('athleta_last_error') : null;
+    const last = typeof window !== 'undefined' ? (sessionStorage.getItem('athleta_last_error') || localStorage.getItem('athleta_last_error')) : null;
     if (n && last && n === last) {
       setReason(r || 'Unknown error occurred');
       setOk(true);
-      sessionStorage.removeItem('athleta_last_error');
+      try { sessionStorage.removeItem('athleta_last_error'); } catch {}
+      try { localStorage.removeItem('athleta_last_error'); } catch {}
     } else {
       window.location.replace('/');
     }
