@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Atleta - Jersey Claiming System",
+  title: "Athleta - Jersey Claiming System",
   description: "Claim your exclusive Atleta jersey with your RVU email address",
 };
 
