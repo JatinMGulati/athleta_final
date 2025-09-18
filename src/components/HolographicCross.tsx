@@ -17,8 +17,11 @@ export default function HolographicCross({ reason }: HolographicCrossProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
       {/* Metallic animated background */}
-      <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,#ef4444_0deg,#a855f7_120deg,#3b82f6_240deg,#ef4444_360deg)] opacity-10 animate-[spin_12s_linear_infinite]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.15),transparent_60%)]" />
+      <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,#ef4444_0deg,#a855f7_120deg,#3b82f6_240deg,#ef4444_360deg)] opacity-10 animate-[spin_9s_linear_infinite]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.18),transparent_65%)]" />
+      {/* Moving scanlines and grain make screenshots obvious */}
+      <div className="pointer-events-none absolute inset-0 opacity-15 mix-blend-screen bg-[linear-gradient(transparent_95%,rgba(255,255,255,0.5)_100%)] bg-[length:100%_4px] animate-[scan_1.2s_linear_infinite]" />
+      <div className="pointer-events-none absolute inset-0 opacity-10 animate-[grain_0.6s_steps(6)_infinite] bg-[url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\'><filter id=\'n\'><feTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'1\'/><feColorMatrix type=\'saturate\' values=\'0\'/></filter><rect width=\'100%\' height=\'100%\' filter=\'url(%23n)\'/></svg>')] bg-[length:200px_200px]" />
 
       {/* Main content */}
       <div className={`relative z-10 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
@@ -41,7 +44,7 @@ export default function HolographicCross({ reason }: HolographicCrossProps) {
                 </defs>
                 <path d="M6 18L18 6M6 6l12 12" fill="none" stroke="url(#crossGrad)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <div className="pointer-events-none absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,transparent,white,transparent)] opacity-20 animate-[spin_2.8s_linear_infinite]" />
+              <div className="pointer-events-none absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,transparent,white,transparent)] opacity-25 animate-[spin_2.2s_linear_infinite]" />
             </div>
           </div>
         </div>
@@ -62,6 +65,8 @@ export default function HolographicCross({ reason }: HolographicCrossProps) {
 
       <style jsx global>{`
         @keyframes bg-pan { 0% { background-position: 0% 50% } 50% { background-position: 100% 50% } 100% { background-position: 0% 50% } }
+        @keyframes scan { 0% { background-position-y: 0 } 100% { background-position-y: 4px } }
+        @keyframes grain { 0% { background-position: 0 0 } 100% { background-position: 200px 200px } }
       `}</style>
     </div>
   );

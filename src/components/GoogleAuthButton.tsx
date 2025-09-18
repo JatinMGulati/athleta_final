@@ -5,7 +5,7 @@ import { signInWithPopup, signOut } from 'firebase/auth';
 import { getAuthClient, getGoogleProvider } from '@/lib/firebase';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { getDb } from '@/lib/firebase';
-import { validateRVUEmail } from '@/lib/utils';
+import { validateRVUEmail, getOrCreateDeviceToken } from '@/lib/utils';
 
 interface GoogleAuthButtonProps {
   onSuccess: () => void;
@@ -37,8 +37,31 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
         return;
       }
 
-      // Check for existing claim
+      // Enforce device lock before attempting claim
       const db = getDb();
+      const deviceToken = getOrCreateDeviceToken();
+      const deviceRef = doc(db, 'devices', deviceToken);
+      try {
+        const existingDevice = await getDoc(deviceRef);
+        if (existingDevice.exists()) {
+          const d = existingDevice.data() as { claimed?: boolean; email?: string };
+          if (d?.claimed && d.email && d.email !== email) {
+            await signOut(getAuthClient());
+            onError('Device lock: This device has already been used to successfully claim a jersey. Only one jersey can be claimed per device.');
+            return;
+          }
+          if (d?.claimed && d.email === email) {
+            await signOut(getAuthClient());
+            onError('This email has already been used to claim a jersey');
+            return;
+          }
+        }
+      } catch (e) {
+        // If device check fails, continue; claim write will still be validated by rules
+        console.warn('[DeviceCheckWarning]', e);
+      }
+
+      // Check for existing claim
       const emailDocId = email; // Use exact email as doc ID
       const claimRef = doc(db, 'jerseyClaims', emailDocId);
       
@@ -67,6 +90,18 @@ export default function GoogleAuthButton({ onSuccess, onError }: GoogleAuthButto
           },
           { merge: false }
         );
+
+        // Mark device as claimed for this email (post-success)
+        try {
+          await setDoc(deviceRef, {
+            claimed: true,
+            email,
+            uid: user.uid,
+            claimedAt: serverTimestamp(),
+          }, { merge: true });
+        } catch (e) {
+          console.warn('[DeviceMarkWarning]', e);
+        }
         
         onSuccess();
       } catch (e: unknown) {
