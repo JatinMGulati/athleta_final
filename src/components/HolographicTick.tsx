@@ -13,12 +13,38 @@ export default function HolographicTick() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
       {/* Metallic animated background */}
-      <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,#0ea5e9_0deg,#9333ea_120deg,#ef4444_240deg,#0ea5e9_360deg)] opacity-10 animate-[spin_10s_linear_infinite]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.18),transparent_65%)]" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'conic-gradient(from 0deg at 50% 50%, #0ea5e9 0deg, #9333ea 120deg, #ef4444 240deg, #0ea5e9 360deg)',
+          opacity: 0.10,
+          animation: 'spin 10s linear infinite',
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.18), transparent 65%)',
+        }}
+      />
       {/* Moving scanlines and grain make screenshots obvious */}
-      <div className="pointer-events-none absolute inset-0 opacity-15 mix-blend-screen bg-[linear-gradient(transparent_95%,rgba(255,255,255,0.5)_100%)] bg-[length:100%_4px] animate-[scan_1.2s_linear_infinite]" />
-      {/* Subtle flicker layer (avoids data-URL to pass build) */}
-      <div className="pointer-events-none absolute inset-0 opacity-5 animate-[flicker_1.8s_steps(6)_infinite] bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.2),transparent_40%),radial-gradient(circle_at_70%_60%,rgba(255,255,255,0.15),transparent_45%)]" />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-15 mix-blend-screen"
+        style={{
+          backgroundImage: 'linear-gradient(transparent 95%, rgba(255,255,255,0.5) 100%)',
+          backgroundSize: '100% 4px',
+          animation: 'scan 1.2s linear infinite',
+        }}
+      />
+      {/* Subtle flicker layer */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-5"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2), transparent 40%), radial-gradient(circle at 70% 60%, rgba(255,255,255,0.15), transparent 45%)',
+          animation: 'flicker 1.8s steps(6) infinite',
+        }}
+      />
 
       {/* Main content */}
       <div className={`relative z-10 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
@@ -29,7 +55,7 @@ export default function HolographicTick() {
             <div className="absolute inset-0 rounded-full bg-[conic-gradient(from_0deg,#ffffff22_0deg,#ffffff88_45deg,#ffffff11_90deg,#ffffff22_180deg,#ffffff88_225deg,#ffffff11_270deg,#ffffff22_360deg)] animate-[spin_6s_linear_infinite]" />
             <div className="absolute inset-[6px] rounded-full bg-gradient-to-br from-[#1f2937] to-[#111827] shadow-[0_0_40px_rgba(16,185,129,0.3)]" />
 
-            {/* Holographic tick with parallax shine */
+            {/* Holographic tick with parallax shine */}
             <div className="relative w-full h-full rounded-full flex items-center justify-center">
               <svg className="w-20 h-20 relative z-10" viewBox="0 0 24 24">
                 <defs>
@@ -42,7 +68,14 @@ export default function HolographicTick() {
                 <path d="M5 13l4 4L19 7" fill="none" stroke="url(#tickGrad)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               {/* moving specular highlight */}
-              <div className="pointer-events-none absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,transparent,white,transparent)] opacity-25 animate-[spin_2.2s_linear_infinite]" />
+              <div
+                className="pointer-events-none absolute inset-0 rounded-full"
+                style={{
+                  background: 'conic-gradient(from 180deg, transparent, white, transparent)',
+                  opacity: 0.25,
+                  animation: 'spin 2.2s linear infinite',
+                }}
+              />
             </div>
           </div>
         </div>

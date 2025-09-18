@@ -17,12 +17,38 @@ export default function HolographicCross({ reason }: HolographicCrossProps) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-black relative overflow-hidden">
       {/* Metallic animated background */}
-      <div className="absolute inset-0 bg-[conic-gradient(from_0deg_at_50%_50%,#ef4444_0deg,#a855f7_120deg,#3b82f6_240deg,#ef4444_360deg)] opacity-10 animate-[spin_9s_linear_infinite]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.18),transparent_65%)]" />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'conic-gradient(from 0deg at 50% 50%, #ef4444 0deg, #a855f7 120deg, #3b82f6 240deg, #ef4444 360deg)',
+          opacity: 0.10,
+          animation: 'spin 9s linear infinite',
+        }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.18), transparent 65%)',
+        }}
+      />
       {/* Moving scanlines and grain make screenshots obvious */}
-      <div className="pointer-events-none absolute inset-0 opacity-15 mix-blend-screen bg-[linear-gradient(transparent_95%,rgba(255,255,255,0.5)_100%)] bg-[length:100%_4px] animate-[scan_1.2s_linear_infinite]" />
-      {/* Subtle flicker layer (avoids data-URL to pass build) */}
-      <div className="pointer-events-none absolute inset-0 opacity-5 animate-[flicker_1.8s_steps(6)_infinite] bg-[radial-gradient(circle_at_20%_30%,rgba(255,255,255,0.2),transparent_40%),radial-gradient(circle_at_70%_60%,rgba(255,255,255,0.15),transparent_45%)]" />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-15 mix-blend-screen"
+        style={{
+          backgroundImage: 'linear-gradient(transparent 95%, rgba(255,255,255,0.5) 100%)',
+          backgroundSize: '100% 4px',
+          animation: 'scan 1.2s linear infinite',
+        }}
+      />
+      {/* Subtle flicker layer */}
+      <div
+        className="pointer-events-none absolute inset-0 opacity-5"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 20% 30%, rgba(255,255,255,0.2), transparent 40%), radial-gradient(circle at 70% 60%, rgba(255,255,255,0.15), transparent 45%)',
+          animation: 'flicker 1.8s steps(6) infinite',
+        }}
+      />
 
       {/* Main content */}
       <div className={`relative z-10 text-center transition-all duration-1000 ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}`}>
@@ -45,7 +71,14 @@ export default function HolographicCross({ reason }: HolographicCrossProps) {
                 </defs>
                 <path d="M6 18L18 6M6 6l12 12" fill="none" stroke="url(#crossGrad)" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              <div className="pointer-events-none absolute inset-0 rounded-full bg-[conic-gradient(from_180deg,transparent,white,transparent)] opacity-25 animate-[spin_2.2s_linear_infinite]" />
+              <div
+                className="pointer-events-none absolute inset-0 rounded-full"
+                style={{
+                  background: 'conic-gradient(from 180deg, transparent, white, transparent)',
+                  opacity: 0.25,
+                  animation: 'spin 2.2s linear infinite',
+                }}
+              />
             </div>
           </div>
         </div>
