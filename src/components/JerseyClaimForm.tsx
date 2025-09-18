@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { collection, addDoc, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getDb } from '@/lib/firebase';
 
 interface JerseyClaimFormProps {
   onSuccess: () => void;
@@ -20,6 +20,7 @@ export default function JerseyClaimForm({ onSuccess, onError }: JerseyClaimFormP
 
   const checkEmailUniqueness = async (value: string): Promise<boolean> => {
     try {
+      const db = getDb();
       // First try direct doc by email id
       const byId = await getDoc(doc(db, 'jerseyClaims', value));
       if (byId.exists()) return false;
@@ -51,6 +52,7 @@ export default function JerseyClaimForm({ onSuccess, onError }: JerseyClaimFormP
         return;
       }
 
+      const db = getDb();
       await addDoc(collection(db, 'jerseyClaims'), {
         email: trimmed,
         claimedAt: new Date(),
